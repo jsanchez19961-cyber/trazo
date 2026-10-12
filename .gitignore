@@ -1,0 +1,8 @@
+# Archivos de trabajo personales: no se publican
+AGENTS.md
+CLAUDE.md
+ESTADO.md
+.claude/
+__pycache__/
+*.pyc
+desktop.ini
