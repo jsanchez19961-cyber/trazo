@@ -30,10 +30,10 @@ Plan B, sin internet: `ARRANCAR_PARA_TABLET.bat` sirve la app desde el PC por la
 
 ## 3. Lo que hace
 
-- **Cuadernos** con papel en blanco, rayado, cuadrícula (5 mm), puntos o Cornell; A4, A5, carta o 16:9.
+- **Cuadernos** con papel en blanco, rayado, cuadrícula (5 mm), puntos o Cornell; tamaños de A5 a A1 (vertical u horizontal), carta o 16:9. Cada página puede tener su propio papel y tamaño (⋯ › Papel y tamaño de página).
 - **Pizarras**: lienzo libre sin límites para esquemas y diagramas.
 - **PDF**: se importan y se anotan encima (pluma, subrayador, texto, formas). Se puede insertar un PDF dentro de un cuaderno.
-- **Herramientas**: pluma (con presión o grosor fijo), subrayador (con línea recta), borrador (trazo entero o parcial, o solo subrayado), lazo (seleccionar, mover, cambiar tamaño, color, copiar, duplicar), texto con teclado (negrita, cursiva, listas, recuadro, colores), formas (línea, flecha, rectángulo, elipse, triángulo, rombo) e imágenes o fotos.
+- **Herramientas**: pluma (con presión o grosor fijo), subrayador (con línea recta), borrador (parcial por defecto: borra solo por donde pasa; o trazo entero; o solo subrayado), lazo (seleccionar, mover, cambiar tamaño, color, copiar, duplicar), texto con teclado (negrita, cursiva, listas, recuadro, colores), formas (línea, flecha, rectángulo, elipse, triángulo, rombo) e imágenes o fotos.
 - **Formas a mano**: dibuja una línea, rectángulo, elipse o triángulo y **mantén quieto el lápiz** al final: se convierte en forma perfecta.
 - **Gestos**: un dedo desplaza, dos dedos hacen zoom, toque con dos dedos deshace (tres rehace). La palma apoyada no pinta. El botón lateral del lápiz (si lo tiene) borra. Botón de la mano: elige si el dedo dibuja o desplaza.
 - **Audio** con transcripción automática mientras grabas (si el navegador lo permite).

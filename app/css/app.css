@@ -541,3 +541,5 @@ img.im { position: absolute; pointer-events: none; transform-origin: 0 0; user-s
 .set-details { margin-top: 10px; }
 .set-details > summary { cursor: pointer; color: var(--muted); font-weight: 600; padding: 6px 0; }
 .settings > .set-details { margin-bottom: 16px; }
+.seg.mini { flex-shrink: 0; padding: 3px; }
+.seg.mini button { height: 36px; padding: 0 10px; font-size: 13px; white-space: nowrap; }

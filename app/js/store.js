@@ -2,13 +2,26 @@
 import { db } from './db.js';
 import { uid } from './util.js';
 
+// Medidas a 96 puntos por pulgada (1 mm = 3,78 px). El orden es el de los desplegables.
 export const PAGE_SIZES = {
+  a5: { name: 'A5 vertical', w: 559, h: 794 },
+  a5l: { name: 'A5 horizontal', w: 794, h: 559 },
   a4: { name: 'A4 vertical', w: 794, h: 1123 },
   a4l: { name: 'A4 horizontal', w: 1123, h: 794 },
-  a5: { name: 'A5', w: 559, h: 794 },
+  a3: { name: 'A3 vertical', w: 1123, h: 1587 },
+  a3l: { name: 'A3 horizontal', w: 1587, h: 1123 },
+  a2: { name: 'A2 vertical', w: 1587, h: 2245 },
+  a2l: { name: 'A2 horizontal', w: 2245, h: 1587 },
+  a1: { name: 'A1 vertical', w: 2245, h: 3179 },
+  a1l: { name: 'A1 horizontal', w: 3179, h: 2245 },
   letter: { name: 'Carta', w: 816, h: 1056 },
   wide: { name: 'Panorámica 16:9', w: 1280, h: 720 },
 };
+
+export function sizeKeyOf(w, h) {
+  for (const [k, s] of Object.entries(PAGE_SIZES)) if (Math.abs(s.w - w) < 2 && Math.abs(s.h - h) < 2) return k;
+  return null;
+}
 
 export const PAPERS = {
   blank: 'En blanco',

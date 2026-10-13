@@ -9,7 +9,7 @@ import { GOOGLE_CLIENT_ID } from './config.js';
 import { getSyncStatus, setStatus } from './sync.js';
 import { connectAndSync } from './syncui.js';
 
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';
 
 function toggle(label, desc, key, after) {
   const input = h('input', { type: 'checkbox', checked: !!state.settings[key] });
