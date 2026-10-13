@@ -2,7 +2,7 @@
 import { h, debounce, clamp, pickFiles, saveFile, safeFileName, fmtDate, fmtDuration, uid, esc } from './util.js';
 import { icon } from './icons.js';
 import { Editor } from './editor.js';
-import { state, getPages, updateItem, saveItem, setSetting, getDocTexts, setText, putBlob, getBlobURL, PAPERS, PAPER_COLORS } from './store.js';
+import { state, getPages, updateItem, saveItem, setSetting, getDocTexts, setText, putBlob, getBlobURL, PAPERS, PAPER_COLORS, PAGE_SIZES, sizeKeyOf } from './store.js';
 import {
   toast, errorToast, modal, menu, popover, closePopover, promptDialog, confirmDialog, colorGrid, SWATCHES, HL_SWATCHES,
   pickFolder, pickTags, highlight,
@@ -169,6 +169,13 @@ function renderTools() {
       }, h('span', { style: { width: 6 + i * 5 + 'px', height: 6 + i * 5 + 'px' } })));
     });
     bar.appendChild(sizes);
+    if (optKey === 'eraser') {
+      bar.appendChild(h('div', { class: 'seg mini', role: 'group', 'aria-label': 'Cómo borra' },
+        [['partial', 'Parcial'], ['stroke', 'Trazo entero']].map(([k, label]) => h('button', {
+          class: o.mode === k ? 'on' : '', title: k === 'partial' ? 'Borra solo por donde pasas' : 'Borra la línea entera al tocarla',
+          onclick: () => { o.mode = k; ed.saveToolOpts(); renderTools(); },
+        }, label))));
+    }
     if (optKey === 'shape') {
       const k = SHAPES.find(x => x[0] === o.kind) || SHAPES[2];
       bar.appendChild(h('button', { class: 'tool', 'aria-label': 'Tipo de forma', title: 'Tipo de forma', onclick: e => toolOptions('shape', e.currentTarget) }, icon(k[1], 22)));
@@ -443,7 +450,7 @@ function pageMenu(i, anchor) {
     { label: 'Duplicar página', icon: 'copy', onClick: () => ed.duplicatePage(i) },
     { label: 'Subir', icon: 'upload', disabled: i === 0, onClick: () => ed.movePage(i, -1) },
     { label: 'Bajar', icon: 'download', disabled: i === ed.pages.length - 1, onClick: () => ed.movePage(i, 1) },
-    page.bg.type !== 'pdf' ? { label: 'Papel de esta página…', icon: 'notebook', onClick: () => paperDialog(i) } : null,
+    page.bg.type !== 'pdf' ? { label: 'Papel y tamaño…', icon: 'notebook', onClick: () => paperDialog(i) } : null,
     { label: 'Exportar como imagen', icon: 'image', onClick: () => exportPng(i) },
     { sep: true },
     { label: 'Eliminar página', icon: 'trash', danger: true, disabled: ed.pages.length <= 1, onClick: () => { ed.deletePage(i); toast('Página eliminada', { action: { label: 'Deshacer', onClick: () => ed.undo() } }); } },
@@ -453,23 +460,31 @@ function pageMenu(i, anchor) {
 function paperDialog(i) {
   const ed = E.ed, page = ed.pages[i];
   let type = page.bg.type, color = page.bg.color;
+  let size = sizeKeyOf(page.w, page.h) || 'custom';
   const body = h('div', { class: 'form' });
   let all = false;
+  const sizeSel = h('select', { class: 'input' },
+    size === 'custom' ? h('option', { value: 'custom', selected: true }, `Actual (${Math.round(page.w / 3.7795)} × ${Math.round(page.h / 3.7795)} mm)`) : null,
+    Object.entries(PAGE_SIZES).map(([k, v]) => h('option', { value: k, selected: k === size }, v.name)));
+  sizeSel.addEventListener('change', () => { size = sizeSel.value; });
   const paint = () => {
     body.innerHTML = '';
     body.append(h('label', { class: 'field-label' }, 'Papel'),
       h('div', { class: 'chips' }, Object.entries(PAPERS).map(([k, v]) => h('button', { class: 'chip' + (k === type ? ' on' : ''), onclick: () => { type = k; paint(); } }, v))),
       h('label', { class: 'field-label' }, 'Color'),
       h('div', { class: 'chips' }, Object.entries(PAPER_COLORS).map(([k, v]) => h('button', { class: 'chip' + (k === color ? ' on' : ''), onclick: () => { color = k; paint(); } }, v))),
+      h('label', { class: 'field-label' }, 'Tamaño'), sizeSel,
+      h('p', { class: 'muted small' }, 'Al cambiar el tamaño, lo dibujado se queda en su sitio; si la página se hace más pequeña, lo que quede fuera no se ve (deshacer lo recupera).'),
       checkRow('Aplicar a todas las páginas (salvo las de PDF)', all, v => { all = v; }));
   };
   paint();
   modal({
-    title: 'Papel', body, actions: [{ label: 'Cancelar', onClick: () => null }, {
+    title: 'Papel y tamaño de página', body, actions: [{ label: 'Cancelar', onClick: () => null }, {
       label: 'Aplicar', primary: true, onClick: () => {
-        if (all) ed.pages.forEach((p, j) => { if (p.bg.type !== 'pdf') ed.setPageBackground(j, { type, color }); });
-        else ed.setPageBackground(i, { type, color });
-        if (all) updateItem(E.item.id, { paper: type, paperColor: color }, { silent: true });
+        const sz = PAGE_SIZES[size];
+        const fmt = { bg: { type, color }, ...(sz ? { w: sz.w, h: sz.h } : {}) };
+        ed.setPagesFormat(all ? ed.pages.map((_, j) => j) : [i], fmt);
+        if (all) updateItem(E.item.id, { paper: type, paperColor: color, ...(sz ? { size } : {}) }, { silent: true });
       },
     }],
   });
@@ -691,7 +706,7 @@ function moreMenu(anchor) {
   const page = ed.currentPage();
   menu(anchor, [
     !board ? { label: 'Añadir página', icon: 'plus', onClick: () => ed.addPage(ed.currentPageIndex()) } : null,
-    !board && page.bg.type !== 'pdf' ? { label: 'Papel de esta página…', icon: 'notebook', onClick: () => paperDialog(ed.currentPageIndex()) } : null,
+    !board && page.bg.type !== 'pdf' ? { label: 'Papel y tamaño de página…', icon: 'notebook', onClick: () => paperDialog(ed.currentPageIndex()) } : null,
     !board ? { label: 'Insertar páginas de un PDF…', icon: 'pdf', onClick: () => insertPdf() } : null,
     { label: 'Insertar imagen…', icon: 'image', onClick: () => imageMenu(anchor) },
     ed.hasClipboard() ? { label: 'Pegar', icon: 'paste', onClick: () => ed.paste() } : null,

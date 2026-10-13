@@ -1,6 +1,6 @@
 // Permite abrir Trazo sin conexión. Los archivos propios se piden primero a la red
 // (para recibir siempre la última versión) y las librerías externas se guardan en caché.
-const VERSION = 'trazo-v2';
+const VERSION = 'trazo-v3';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css', 'icons/icon.svg',
   'js/main.js', 'js/util.js', 'js/db.js', 'js/store.js', 'js/ink.js', 'js/libs.js', 'js/pdfdoc.js', 'js/paper.js',

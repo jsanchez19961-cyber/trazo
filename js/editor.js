@@ -7,7 +7,7 @@ import { mapStroke, selectionBox, hitStroke, strokeBox } from './ink.js';
 import { makeThumb } from './render.js';
 import {
   state, saveItem, savePages, deletePages, newPage, putBlob, getBlobURL, setTexts, getDocTexts,
-  emit, PAGE_SIZES,
+  emit, setSetting, PAGE_SIZES,
 } from './store.js';
 
 const GAP = 28;
@@ -37,11 +37,17 @@ export class Editor {
     this.opts = {
       pen: { color: st.penColors[0], size: 2.4, thinning: 0.6 },
       hl: { color: st.hlColors[0], size: 18, straight: false },
-      eraser: { size: 14, mode: 'stroke', hlOnly: false },
+      eraser: { size: 14, mode: 'partial', hlOnly: false },
       shape: { kind: 'rect', color: '#1d1d1f', size: 2.4, fill: false },
       text: { size: 18, color: '#1d1d1f' },
       ...(st.toolOpts || {}),
     };
+    // Desde la versión 1.2 el borrador borra solo por donde pasa (antes, el trazo entero).
+    if (st.toolOptsVersion !== 2) {
+      this.opts.eraser = { ...this.opts.eraser, mode: 'partial' };
+      setSetting('toolOpts', this.opts);
+      setSetting('toolOptsVersion', 2);
+    }
     this.tools = createTools(this);
 
     this.root = h('div', { class: 'ed-stage' });
@@ -648,6 +654,12 @@ export class Editor {
       page.bg = { ...a[which] };
       this.pvs.get(page.id)?.renderPaper();
       this.markDirty(page.id);
+    } else if (a.type === 'pagefmt') {
+      for (const ch of a.list) {
+        const page = this.pageById.get(ch.pageId);
+        if (page) this.applyPageFormat(page, ch[which], false);
+      }
+      this.relayout();
     }
   }
 
@@ -1109,13 +1121,42 @@ export class Editor {
   }
 
   setPageBackground(i, bg) {
-    const page = this.pages[i];
-    if (!page || page.bg.type === 'pdf' || page.infinite) return;
-    const before = { ...page.bg };
-    page.bg = { ...page.bg, ...bg };
-    this.pushHistory({ type: 'pagebg', pageId: page.id, before, after: { ...page.bg } });
-    this.pvs.get(page.id)?.renderPaper();
+    this.setPagesFormat([i], { bg });
+  }
+
+  // Cambia papel, color y/o tamaño de varias páginas (no PDF) en un solo paso de deshacer.
+  setPagesFormat(indices, { bg, w, h }) {
+    const list = [];
+    for (const i of indices) {
+      const page = this.pages[i];
+      if (!page || page.bg.type === 'pdf' || page.infinite) continue;
+      const before = { bg: { ...page.bg }, w: page.w, h: page.h };
+      const after = { bg: { ...page.bg, ...(bg || {}) }, w: w || page.w, h: h || page.h };
+      if (JSON.stringify(before) === JSON.stringify(after)) continue;
+      list.push({ pageId: page.id, before, after });
+      this.applyPageFormat(page, after, false);
+    }
+    if (!list.length) return;
+    this.pushHistory({ type: 'pagefmt', list });
+    this.relayout();
+  }
+
+  applyPageFormat(page, f, relayout = true) {
+    const resized = page.w !== f.w || page.h !== f.h;
+    page.bg = { ...f.bg };
+    page.w = f.w;
+    page.h = f.h;
+    const pv = this.pvs.get(page.id);
+    if (pv && resized) { pv.destroy(); this.pvs.delete(page.id); } else pv?.renderPaper();
     this.markDirty(page.id);
+    if (relayout) this.relayout();
+  }
+
+  relayout() {
+    this.computeLayout();
+    this.setView(this.view.tx, this.view.ty, this.view.z);
+    this.updateVisible();
+    this.ui.onPages?.();
   }
 
   // ================= Cierre =================
